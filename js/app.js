@@ -34,7 +34,8 @@
   };
   const artCache = {};
   DW.art = (m, v) => {
-    v = v || 0; const key = m.id + '_' + v; if (artCache[key]) return artCache[key];
+    v = v || 0; if (v === 0 && window.DAWAA_IMAGES && window.DAWAA_IMAGES[m.id]) return window.DAWAA_IMAGES[m.id]; // optional: map id -> licensed photo URL
+    const key = m.id + '_' + v; if (artCache[key]) return artCache[key];
     const h = hash(m.name), c = PAL[(h + v) % PAL.length], c2 = PAL[(h + v + 3) % PAL.length];
     const label = esc(m.name.split(/[ (]/)[0].slice(0, 12)), k = kind(m.form);
     let g = '';
@@ -66,7 +67,7 @@
   DW.alt = m => {
     if (m.isLab || m.cls === 'dev' || m.cls === 'pc') return null;
     let best = null;
-    for (const x of D.meds) { if (x.id === m.id || norm(x.comp) !== norm(m.comp) || x.form !== m.form || x.price >= m.price) continue; if (!best || x.price < best.price) best = x; }
+    for (const x of D.meds) { if (x.id === m.id || x.cx || m.cx || norm(x.comp) !== norm(m.comp) || x.form !== m.form || x.price >= m.price) continue; if (!best || x.price < best.price) best = x; }
     if (!best) return null;
     return { m: best, pct: Math.round((1 - best.price / m.price) * 100) };
   };
@@ -202,7 +203,7 @@
   /* ---------- listing ---------- */
   const FORMS = f => f;
   const listPage = (title, items, crumbs, q) => {
-    const brands = {}, forms = {}; items.forEach(m => { brands[m.marketer] = (brands[m.marketer] || 0) + 1; forms[m.form] = (forms[m.form] || 0) + 1; });
+    const brands = {}, forms = {}; items.forEach(m => { const bk = m.marketer || m.name.split(' ')[0]; brands[bk] = (brands[bk] || 0) + 1; forms[m.form] = (forms[m.form] || 0) + 1; });
     DW._list = { items, title, brands, forms, sort: 'rel', fb: new Set(), ff: new Set(), bq: '' };
     const html = `<div class="container"><div class="bc"><a href="#/">${t('home')}</a>${ic('chevRight', 12)}${crumbs.map(c => `<span>${esc(c)}</span>`).join(ic('chevRight', 12))}</div>
       <div class="list"><aside class="filters" id="filters"><div class="ftop"><b>${t('filters')}</b><button class="btn sm ghost" data-a="fclose">${t('close')}</button></div><h4 class="hide" style="display:block">${t('filters')}</h4><div class="fgroup"><h5>${t('brands')}</h5><input class="fs" id="bq" placeholder="${t('searchBrands')}"><div class="fscroll" id="bl"></div></div><div class="fgroup"><h5>${t('productForm')}</h5><div class="fscroll" id="fl"></div></div><button class="btn sm ghost block" data-a="fclear">${t('clear')}</button></aside>
@@ -214,7 +215,7 @@
     const nm = s => s;
     const opt = (obj, set, cls) => Object.entries(obj).filter(([k]) => !L.bq || cls !== 'b' || k.toLowerCase().includes(L.bq)).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<label class="fopt"><input type="checkbox" data-a="ftog" data-c="${cls}" data-v="${esc(k)}" ${set.has(k) ? 'checked' : ''}>${esc(nm(k))}<span class="n">${n}</span></label>`).join('');
     const bl = $('#bl'), fl = $('#fl'); if (bl) bl.innerHTML = opt(L.brands, L.fb, 'b'); if (fl) fl.innerHTML = opt(L.forms, L.ff, 'f');
-    let r = L.items.filter(m => (!L.fb.size || L.fb.has(m.marketer)) && (!L.ff.size || L.ff.has(m.form)));
+    let r = L.items.filter(m => (!L.fb.size || L.fb.has(m.marketer || m.name.split(' ')[0])) && (!L.ff.size || L.ff.has(m.form)));
     if (L.sort === 'lo') r = [...r].sort((a, b) => a.price - b.price); else if (L.sort === 'hi') r = [...r].sort((a, b) => b.price - a.price); else if (L.sort === 'off') r = [...r].sort((a, b) => b.off - a.off);
     $('#rc') && ($('#rc').textContent = '(' + r.length + ' ' + t('results') + ')');
     const g = $('#lg'); if (!g) return;
@@ -226,7 +227,7 @@
     });
     g.innerHTML = out;
   }
-  const altCard = (m, a) => `<div class="galt"><div class="gh">${t('genericAlt', { n: '<b>' + a.pct + '</b>' })}</div><div class="inner"><div style="width:90px"><div class="ct">${t('cheaperTag', { n: a.pct })}</div><img src="${DW.art(a.m)}" style="width:90px;height:64px;object-fit:contain" alt=""></div><div class="grow"><a href="#/drug/${a.m.id}-${a.m.slug}"><b style="font-size:13px">${esc(a.m.name)}</b></a><div class="small mute">${esc(a.m.pack)}</div><div class="small mute">${esc(a.m.marketer)}</div><div class="mt8"><span class="price">${money(a.m.price)}</span>${a.m.off ? `<span class="mrp">${money(a.m.mrp)}</span><span class="offp">${a.m.off}% ${t('off')}</span>` : ''}</div>${units(a.m) ? `<span class="pill-per">${money(a.m.price / units(a.m)).replace(/(\.\d\d)\d+/, '$1')} ${t('perTablet')}</span>` : ''}<div class="cardctl mt8" data-id="${a.m.id}">${ctl(a.m.id, 1)}</div></div></div><div class="foot2">${t('sameComp')}</div></div>`;
+  const altCard = (m, a) => `<div class="galt"><div class="gh">${t('genericAlt', { n: '<b>' + a.pct + '</b>' })}</div><div class="inner"><div style="width:90px"><div class="ct">${t('cheaperTag', { n: a.pct })}</div><img src="${DW.art(a.m)}" style="width:90px;height:64px;object-fit:contain" alt=""></div><div class="grow"><a href="#/drug/${a.m.id}-${a.m.slug}"><b style="font-size:13px">${esc(a.m.name)}</b></a><div class="small mute">${esc(a.m.pack)}</div>${a.m.marketer ? `<div class="small mute">${esc(a.m.marketer)}</div>` : ''}<div class="mt8"><span class="price">${money(a.m.price)}</span>${a.m.off ? `<span class="mrp">${money(a.m.mrp)}</span><span class="offp">${a.m.off}% ${t('off')}</span>` : ''}</div>${units(a.m) ? `<span class="pill-per">${money(a.m.price / units(a.m)).replace(/(\.\d\d)\d+/, '$1')} ${t('perTablet')}</span>` : ''}<div class="cardctl mt8" data-id="${a.m.id}">${ctl(a.m.id, 1)}</div></div></div><div class="foot2">${t('sameComp')}</div></div>`;
   DW.routes.search = (seg, q) => { const s = (q.get('q') || '').trim(); const items = s ? DW.search(s) : D.meds; return listPage(s || t('allMeds'), items, [s || t('allMeds')], s ? s : null); };
   DW.routes.category = seg => { const key = decodeURIComponent(seg[1] || ''); const name = tl(DW.catName(key)); return listPage(name, DW.catItems(key), [name]); };
   DW.routes.ayurveda = () => DW.routes.category(['category', 'ayurveda']);
@@ -247,11 +248,11 @@
     const id = parseInt(seg[1]); const m = D.meds.find(x => x.id === id);
     if (!m) return { html: `<div class="container"><div class="empty">${ic('search', 52)}<h2>${t('noResults')}</h2><a class="btn" href="#/">${t('home')}</a></div></div>`, nav: 'home' };
     const d = desc(m), a = DW.alt(m), sim = D.meds.filter(x => x.cls === m.cls && x.id !== m.id).slice(0, 12);
-    const subs = D.meds.filter(x => x.id !== m.id && x.cls === m.cls && x.comp.split(/[ (]/)[0] === m.comp.split(/[ (]/)[0]).slice(0, 8);
+    const subs = D.meds.filter(x => x.id !== m.id && !x.cx && !m.cx && x.cls === m.cls && x.comp.split(/[ (]/)[0] === m.comp.split(/[ (]/)[0]).slice(0, 8);
     const sec = (id2, h, body) => `<section class="sect" id="${id2}"><h2>${h}</h2>${body}</section>`;
     const html = `<div class="container"><div class="bc"><a href="#/">${t('home')}</a>${ic('chevRight', 12)}<a href="#/category/${m.cat}">${esc(m.parent)}</a>${ic('chevRight', 12)}<span>${esc(m.sub)}</span>${ic('chevRight', 12)}<span>${esc(m.name)}</span><span class="grow"></span><span class="langtog hm">${ic('globe', 14)} ${langName[S.lang] === 'EN' ? 'English - EN' : S.lang === 'hi' ? 'हिंदी - HI' : 'ਪੰਜਾਬੀ - PA'}</span></div>
       <div class="pdp"><div class="pdp-l"><div class="pdp-top"><div><h1>${esc(m.name)}</h1><div class="pk">${esc(m.pack.replace(/^(strip|bottle|tube|box|sachet|vial|pen|inhaler|jar|kit|pack) of /, ''))}</div>${m.rx ? `<div class="chip mt8" style="display:inline-block">${ic('rx', 14)} ${t('rxOnly')}</div>` : ''}<hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
-        <div class="cmp">${t('composition')}:<a href="#/search?q=${encodeURIComponent(m.comp.split(/[ (]/)[0])}">${esc(m.comp)}</a>${t('marketer')}:<a href="#/search?q=${encodeURIComponent(m.marketer.split(' ')[0])}">${esc(m.marketer)}</a></div>
+        <div class="cmp">${t('composition')}:<a href="#/search?q=${encodeURIComponent(m.comp.split(/[ (]/)[0])}">${esc(m.comp)}</a>${m.marketer ? `${t('marketer')}:<a href="#/search?q=${encodeURIComponent(m.marketer.split(' ')[0])}">${esc(m.marketer)}</a>` : ''}</div>
         ${a ? `<div class="cheapbox" data-a="altmodal" data-id="${m.id}">${ic('verified', 20)}<span><b>${t('cheaper', { n: a.pct })}</b></span>${ic('chevRight', 16)}</div>` : ''}</div>
         <div class="gal"><div class="main"><img id="gmain" src="${DW.art(m)}" alt="${esc(m.name)}"></div><div class="thumbs">${[0, 1, 2].map(i => `<button class="${i === 0 ? 'on' : ''}" data-a="thumb" data-i="${i}" data-id="${m.id}"><img src="${DW.art(m, i)}" alt="">${i === 2 ? '<span class="more">+3</span>' : ''}</button>`).join('')}</div></div></div>
       <div class="callrow"><div class="ci">${ic('phone', 24)}</div><div><b>${t('callBar')}</b><br>${t('callUs')} <a class="green sb" href="tel:18002122323">1800-212-2323</a> ${t('orCallback')}</div><div class="phone"><span>+91</span><input id="cbph2" type="tel" maxlength="10" placeholder="${t('phoneNumber')}"></div><button class="btn sm" data-a="callback2">${t('getCallback')}</button></div>
@@ -266,7 +267,7 @@
       ${sec('how', t('howToUse'), `<p>${esc(d.how)}</p>`)}${sec('works', t('howWorks'), `<p>${esc(d.works)}</p>`)}
       ${sec('safety', t('safety'), `<ul class="ul">${d.safety.map(s => `<li>${esc(s)}</li>`).join('')}</ul>`)}
       ${sec('faq', t('faqs'), d.faq.map(f => `<div class="faq"><button data-a="faq">${esc(f[0])}${ic('chevDown', 16)}</button><div>${esc(f[1])}</div></div>`).join(''))}
-      ${sec('subs', t('substitutes'), subs.length ? `<table class="subtbl"><tr><th>${t('name')}</th><th>${t('marketer')}</th><th>${t('mrp')}</th></tr>${subs.map(x => `<tr><td><a href="#/drug/${x.id}-${x.slug}">${esc(x.name)}</a></td><td>${esc(x.marketer)}</td><td>${money(x.price)}</td></tr>`).join('')}</table>` : `<p class="mute">${t('empty')}</p>`)}
+      ${sec('subs', t('substitutes'), subs.length ? `<table class="subtbl"><tr><th>${t('name')}</th><th>${t('marketer')}</th><th>${t('mrp')}</th></tr>${subs.map(x => `<tr><td><a href="#/drug/${x.id}-${x.slug}">${esc(x.name)}</a></td><td>${esc(x.marketer || '—')}</td><td>${money(x.price)}</td></tr>`).join('')}</table>` : `<p class="mute">${t('empty')}</p>`)}
       </div>
       <aside class="pdp-r"><div class="pbox"><div class="pp">${money(m.price)}${m.off ? `<span class="m">${t('mrp')} ${money(m.mrp)}</span><span class="o">${m.off}% ${t('off')}</span>` : ''}</div><div class="tx">${t('inclTax')}</div>
         <div class="offrow"><div class="offc"><b>${t('useCode')} DAWAANEW</b><br>Get for ${money(Math.round(m.price * 85) / 100)} on orders above ₹1200</div><div class="offc"><b>DAWAA10</b><br>10% off up to ₹100 on orders above ₹300</div></div>

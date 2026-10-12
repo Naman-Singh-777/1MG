@@ -456,7 +456,7 @@ body.hascall{padding-bottom:58px}
   .cowrap{grid-template-columns:1fr}.sumbox{position:static}
   .login{grid-template-columns:1fr}.login .lt{display:none}.login .lr{padding:36px 22px 22px}
   .callbar .container{flex-wrap:wrap;height:auto;padding:8px var(--pad);gap:6px}
-  .callbar .t1,.callbar .t2{display:none}.callbar .container{flex-wrap:nowrap;padding:8px var(--pad)}.phone{width:auto;flex:1;min-width:0;height:38px}.callbar .btn{height:38px;padding:0 12px;font-size:12px;white-space:nowrap;flex:none}.callbar .x{flex:none}
+  .callbar .t1,.callbar .t2{display:none}.callbar .container{flex-wrap:nowrap;padding:8px var(--pad)}.phone{width:auto;flex:1;min-width:120px;height:38px;padding:0 8px}.phone .fl{display:none}.callbar .btn{height:38px;padding:0 12px;font-size:12px;white-space:nowrap;flex:none}.callbar .x{flex:none}
   body.hascall{padding-bottom:62px}
   .fgrid{grid-template-columns:1fr 1fr}.fgrid>div:first-child{grid-column:span 2}
   .mlist{columns:2}
